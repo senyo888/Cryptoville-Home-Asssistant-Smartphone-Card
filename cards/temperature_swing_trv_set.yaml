@@ -1,0 +1,713 @@
+# cards/temperature_swing_trv_set.yaml
+#
+# Temperature Swing – Multi-TRV Gauge Set
+#
+# Mobile-optimised expandable card showing temperature swing (°C/hr)
+# for multiple TRVs using:
+#   - Bubble Card (header)
+#   - Button Card (chevron toggle + TRV labels)
+#   - Custom Gauge Card (animated ring, severity, pulses)
+#
+# REQUIREMENTS
+# - HACS:
+#     - bubble-card
+#     - button-card
+#     - custom-gauge-card
+# - Optional (for popups):
+#     - browser_mod
+#     - versatile-thermostat-ui-card
+#
+# HELPER ENTITY
+# - input_boolean.temperature_swing_expanded
+#   (defined in packages/dropdown_mod.yaml)
+
+type: vertical-stack
+cards:
+  # ───────────────────────────────────────────────
+  # HEADER – DROPDOWN TRIGGER
+  # ───────────────────────────────────────────────
+  - type: custom:bubble-card
+    card_type: button
+    name: Temperature Swing °C/hr
+    icon: mdi:chart-bell-curve
+    entity: input_boolean.temperature_swing_expanded
+    tap_action:
+      action: toggle
+    show_state: false
+    card_mod:
+      style: |
+        ha-card {
+          border-radius: 22px;
+          box-shadow: 0 0 25px 6px rgba(248, 250, 252, 0.10);
+        }
+
+  # ───────────────────────────────────────────────
+  # FLOATING CHEVRON BUTTON
+  # ───────────────────────────────────────────────
+  - type: custom:button-card
+    entity: input_boolean.temperature_swing_expanded
+    icon: |
+      [[[
+        return entity.state === 'on'
+          ? 'mdi:chevron-up'
+          : 'mdi:chevron-down';
+      ]]]
+    tap_action:
+      action: toggle
+    double_tap_action:
+      action: toggle
+    show_name: false
+    show_state: false
+    styles:
+      card:
+        - width: 36px
+        - height: 36px
+        - margin: "-18px auto 0 auto"
+        - border-radius: 50%
+        - background: rgba(15,23,42,0.95)
+        - box-shadow: 0 6px 14px rgba(0,0,0,0.6)
+        - padding: 0
+        - display: flex
+        - align-items: center
+        - justify-content: center
+      icon:
+        - width: 22px
+        - height: 22px
+        - color: "#E5E7EB"
+
+  # ───────────────────────────────────────────────
+  # MAIN GRID – ONLY SHOWN WHEN EXPANDED
+  # ───────────────────────────────────────────────
+  - type: conditional
+    conditions:
+      - entity: input_boolean.temperature_swing_expanded
+        state: "on"
+    card:
+      type: grid
+      square: false
+      columns: 2
+      cards:
+
+        # ============================================================
+        # LOUNGE TRV
+        # ============================================================
+        - type: vertical-stack
+          cards:
+            - type: custom:custom-gauge-card
+              entity: sensor.vt_livingroom_temperature_slope
+              name: null
+              unit: °C/hr
+              min: -5
+              max: 5
+              decimals: 2
+              bidirectional: true
+              card_width: auto
+              card_height: 210px
+              card_padding: 6px
+              gauge_size: 170
+              center_size: 110
+              leds_count: 90
+              led_size: 3
+              smooth_transitions: true
+              animation_duration: 1000
+              theme: custom
+              custom_background: transparent
+              custom_gauge_background: "#000000"
+              custom_center_background: "#000000"
+              custom_text_color: "#e5e7eb"
+              custom_secondary_text_color: "#6b7280"
+              hide_inactive_leds: true
+              zones:
+                - from: -5
+                  to: 5
+                  color: "#020617"
+                  opacity: 0.8
+              severity:
+                - value: -5
+                  color: "#1d4ed8"
+                - value: -0.05
+                  color: "#38bdf8"
+                - value: 0
+                  color: "#4ade80"
+                - value: 0.1
+                  color: "#22c55e"
+                - value: 1
+                  color: "#fb923c"
+                - value: 5
+                  color: "#ef4444"
+              enable_shadow: true
+              center_shadow: true
+              center_shadow_blur: 30
+              center_shadow_spread: 2
+              center_shadow_pulse: true
+              center_shadow_pulse_duration: 2200
+              center_shadow_pulse_min: -0.05
+              center_shadow_pulse_max: 0.05
+              center_shadow_pulse_intensity: 0.3
+              show_trend: true
+              card_mod:
+                style: |
+                  ha-card {
+                    transition: box-shadow 0.5s ease;
+                    border-radius: 22px;
+                    box-shadow:
+                      {% set v = states('sensor.vt_livingroom_temperature_slope') | float(0) %}
+                      {% if v < -0.05 %}
+                        0 0 25px 8px rgba(56,189,248,0.55);
+                      {% elif v > 0.05 %}
+                        0 0 25px 8px rgba(236,72,153,0.65);
+                      {% else %}
+                        none;
+                      {% endif %}
+                  }
+            - type: custom:button-card
+              entity: climate.livingroom_vt
+              name: Lounge TRV
+              icon: mdi:radiator
+              show_state: false
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    title: Lounge TRV Controls
+                    size: wide
+                    content:
+                      type: custom:versatile-thermostat-ui-card
+                      entity: climate.livingroom_vt
+                      name: Lounge TRV Controls
+                      powerEntity: sensor.vt_livingroom_energy
+                      set_current_as_main: true
+                      disable_menu: false
+                      disable_fan_only: true
+                      disable_dry: true
+                      disable_cool: true
+                      disable_heat_cool: true
+                      disable_circle: true
+                      disable_target_icon: false
+                      allow_lock_toggle: true
+                      disable_auto_fan_infos: true
+                      disable_power_infos: false
+              styles:
+                card:
+                  - border-radius: 999px
+                  - padding: 4px 12px
+                  - font-size: 11px
+                  - margin-top: "-30px"
+                  - margin-bottom: 18px
+                  - align-self: center
+                  - box-shadow: 0 0 18px rgba(148, 163, 184, 0.7)
+                  - background: rgba(15,23,42,0.9)
+                icon:
+                  - width: 16px
+                  - height: 16px
+
+        # ============================================================
+        # KITCHEN TRV
+        # ============================================================
+        - type: vertical-stack
+          cards:
+            - type: custom:custom-gauge-card
+              entity: sensor.vt_kitchen_temperature_slope
+              name: null
+              unit: °C/hr
+              min: -5
+              max: 5
+              decimals: 2
+              bidirectional: true
+              card_width: auto
+              card_height: 210px
+              card_padding: 6px
+              gauge_size: 170
+              center_size: 110
+              leds_count: 90
+              led_size: 3
+              smooth_transitions: true
+              animation_duration: 1000
+              theme: custom
+              custom_background: transparent
+              custom_gauge_background: "#000000"
+              custom_center_background: "#000000"
+              custom_text_color: "#e5e7eb"
+              custom_secondary_text_color: "#6b7280"
+              hide_inactive_leds: true
+              zones:
+                - from: -5
+                  to: 5
+                  color: "#020617"
+                  opacity: 0.8
+              severity:
+                - value: -5
+                  color: "#1d4ed8"
+                - value: -0.05
+                  color: "#38bdf8"
+                - value: 0
+                  color: "#4ade80"
+                - value: 0.1
+                  color: "#22c55e"
+                - value: 1
+                  color: "#fb923c"
+                - value: 5
+                  color: "#ef4444"
+              enable_shadow: true
+              center_shadow: true
+              center_shadow_blur: 30
+              center_shadow_spread: 2
+              center_shadow_pulse: true
+              center_shadow_pulse_duration: 2200
+              center_shadow_pulse_min: -0.05
+              center_shadow_pulse_max: 0.05
+              center_shadow_pulse_intensity: 0.3
+              show_trend: true
+              card_mod:
+                style: |
+                  ha-card {
+                    transition: box-shadow 0.5s ease;
+                    border-radius: 22px;
+                    box-shadow:
+                      {% set v = states('sensor.vt_kitchen_temperature_slope') | float(0) %}
+                      {% if v < -0.05 %}
+                        0 0 25px 8px rgba(56,189,248,0.55);
+                      {% elif v > 0.05 %}
+                        0 0 25px 8px rgba(236,72,153,0.65);
+                      {% else %}
+                        none;
+                      {% endif %}
+                  }
+            - type: custom:button-card
+              entity: climate.kitchen_vt
+              name: Kitchen TRV
+              icon: mdi:radiator
+              show_state: false
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    title: Kitchen TRV Controls
+                    size: wide
+                    content:
+                      type: custom:versatile-thermostat-ui-card
+                      entity: climate.kitchen_vt
+              styles:
+                card:
+                  - border-radius: 999px
+                  - padding: 4px 12px
+                  - font-size: 11px
+                  - margin-top: "-30px"
+                  - margin-bottom: 18px
+                  - align-self: center
+                  - box-shadow: 0 0 18px rgba(148, 163, 184, 0.7)
+                  - background: rgba(15,23,42,0.9)
+                icon:
+                  - width: 16px
+                  - height: 16px
+
+        # ============================================================
+        # HALLWAY TRV
+        # ============================================================
+        - type: vertical-stack
+          cards:
+            - type: custom:custom-gauge-card
+              entity: sensor.vt_hallway_temperature_slope
+              name: null
+              unit: °C/hr
+              min: -5
+              max: 5
+              decimals: 2
+              bidirectional: true
+              card_width: auto
+              card_height: 210px
+              card_padding: 6px
+              gauge_size: 170
+              center_size: 110
+              leds_count: 90
+              led_size: 3
+              smooth_transitions: true
+              animation_duration: 1000
+              theme: custom
+              custom_background: transparent
+              custom_gauge_background: "#000000"
+              custom_center_background: "#000000"
+              custom_text_color: "#e5e7eb"
+              custom_secondary_text_color: "#6b7280"
+              hide_inactive_leds: true
+              zones:
+                - from: -5
+                  to: 5
+                  color: "#020617"
+                  opacity: 0.8
+              severity:
+                - value: -5
+                  color: "#1d4ed8"
+                - value: -0.05
+                  color: "#38bdf8"
+                - value: 0
+                  color: "#4ade80"
+                - value: 0.1
+                  color: "#22c55e"
+                - value: 1
+                  color: "#fb923c"
+                - value: 5
+                  color: "#ef4444"
+              enable_shadow: true
+              center_shadow: true
+              center_shadow_blur: 30
+              center_shadow_spread: 2
+              center_shadow_pulse: true
+              center_shadow_pulse_duration: 2200
+              center_shadow_pulse_min: -0.05
+              center_shadow_pulse_max: 0.05
+              center_shadow_pulse_intensity: 0.3
+              show_trend: true
+              card_mod:
+                style: |
+                  ha-card {
+                    transition: box-shadow 0.5s ease;
+                    border-radius: 22px;
+                    box-shadow:
+                      {% set v = states('sensor.vt_hallway_temperature_slope') | float(0) %}
+                      {% if v < -0.05 %}
+                        0 0 25px 8px rgba(56,189,248,0.55);
+                      {% elif v > 0.05 %}
+                        0 0 25px 8px rgba(236,72,153,0.65);
+                      {% else %}
+                        none;
+                      {% endif %}
+                  }
+            - type: custom:button-card
+              entity: climate.hallway_vt
+              name: Hallway TRV
+              icon: mdi:radiator
+              show_state: false
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    title: Hallway TRV Controls
+                    size: wide
+                    content:
+                      type: custom:versatile-thermostat-ui-card
+                      entity: climate.hallway_vt
+              styles:
+                card:
+                  - border-radius: 999px
+                  - padding: 4px 12px
+                  - font-size: 11px
+                  - margin-top: "-30px"
+                  - margin-bottom: 18px
+                  - align-self: center
+                  - box-shadow: 0 0 18px rgba(148, 163, 184, 0.7)
+                  - background: rgba(15,23,42,0.9)
+                icon:
+                  - width: 16px
+                  - height: 16px
+
+        # ============================================================
+        # BEDROOM TRV
+        # ============================================================
+        - type: vertical-stack
+          cards:
+            - type: custom:custom-gauge-card
+              entity: sensor.vt_bedroom_temperature_slope
+              name: null
+              unit: °C/hr
+              min: -5
+              max: 5
+              decimals: 2
+              bidirectional: true
+              card_width: auto
+              card_height: 210px
+              card_padding: 6px
+              gauge_size: 170
+              center_size: 110
+              leds_count: 90
+              led_size: 3
+              smooth_transitions: true
+              animation_duration: 1000
+              theme: custom
+              custom_background: transparent
+              custom_gauge_background: "#000000"
+              custom_center_background: "#000000"
+              custom_text_color: "#e5e7eb"
+              custom_secondary_text_color: "#6b7280"
+              hide_inactive_leds: true
+              zones:
+                - from: -5
+                  to: 5
+                  color: "#020617"
+                  opacity: 0.8
+              severity:
+                - value: -5
+                  color: "#1d4ed8"
+                - value: -0.05
+                  color: "#38bdf8"
+                - value: 0
+                  color: "#4ade80"
+                - value: 0.1
+                  color: "#22c55e"
+                - value: 1
+                  color: "#fb923c"
+                - value: 5
+                  color: "#ef4444"
+              enable_shadow: true
+              center_shadow: true
+              center_shadow_blur: 30
+              center_shadow_spread: 2
+              center_shadow_pulse: true
+              center_shadow_pulse_duration: 2200
+              center_shadow_pulse_min: -0.05
+              center_shadow_pulse_max: 0.05
+              center_shadow_pulse_intensity: 0.3
+              show_trend: true
+              card_mod:
+                style: |
+                  ha-card {
+                    transition: box-shadow 0.5s ease;
+                    border-radius: 22px;
+                    box-shadow:
+                      {% set v = states('sensor.vt_bedroom_temperature_slope') | float(0) %}
+                      {% if v < -0.05 %}
+                        0 0 25px 8px rgba(56,189,248,0.55);
+                      {% elif v > 0.05 %}
+                        0 0 25px 8px rgba(236,72,153,0.65);
+                      {% else %}
+                        none;
+                      {% endif %}
+                  }
+            - type: custom:button-card
+              entity: climate.bedroom_vt
+              name: Bedroom TRV
+              icon: mdi:radiator
+              show_state: false
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    title: Bedroom TRV Controls
+                    size: wide
+                    content:
+                      type: custom:versatile-thermostat-ui-card
+                      entity: climate.bedroom_vt
+              styles:
+                card:
+                  - border-radius: 999px
+                  - padding: 4px 12px
+                  - font-size: 11px
+                  - margin-top: "-30px"
+                  - margin-bottom: 18px
+                  - align-self: center
+                  - box-shadow: 0 0 18px rgba(148, 163, 184, 0.7)
+                  - background: rgba(15,23,42,0.9)
+                icon:
+                  - width: 16px
+                  - height: 16px
+
+        # ============================================================
+        # KIDS ROOM TRV
+        # ============================================================
+        - type: vertical-stack
+          cards:
+            - type: custom:custom-gauge-card
+              entity: sensor.vt_kids_temperature_slope
+              name: null
+              unit: °C/hr
+              min: -5
+              max: 5
+              decimals: 2
+              bidirectional: true
+              card_width: auto
+              card_height: 210px
+              card_padding: 6px
+              gauge_size: 170
+              center_size: 110
+              leds_count: 90
+              led_size: 3
+              smooth_transitions: true
+              animation_duration: 1000
+              theme: custom
+              custom_background: transparent
+              custom_gauge_background: "#000000"
+              custom_center_background: "#000000"
+              custom_text_color: "#e5e7eb"
+              custom_secondary_text_color: "#6b7280"
+              hide_inactive_leds: true
+              zones:
+                - from: -5
+                  to: 5
+                  color: "#020617"
+                  opacity: 0.8
+              severity:
+                - value: -5
+                  color: "#1d4ed8"
+                - value: -0.02
+                  color: "#38bdf8"
+                - value: 0.05
+                  color: "#22c55e"
+                - value: 0.1
+                  color: "#f9a8d4"
+                - value: 1
+                  color: "#ec4899"
+                - value: 5
+                  color: "#db2777"
+              enable_shadow: true
+              center_shadow: true
+              center_shadow_blur: 30
+              center_shadow_spread: 2
+              center_shadow_pulse: true
+              center_shadow_pulse_duration: 2200
+              center_shadow_pulse_min: -0.05
+              center_shadow_pulse_max: 0.05
+              center_shadow_pulse_intensity: 0.3
+              show_trend: true
+              card_mod:
+                style: |
+                  ha-card {
+                    transition: box-shadow 0.5s ease;
+                    border-radius: 22px;
+                    box-shadow:
+                      {% set v = states('sensor.vt_kids_temperature_slope') | float(0) %}
+                      {% if v < -0.05 %}
+                        0 0 25px 8px rgba(56,189,248,0.55);
+                      {% elif v > 0.05 %}
+                        0 0 25px 8px rgba(236,72,153,0.65);
+                      {% else %}
+                        none;
+                      {% endif %}
+                  }
+            - type: custom:button-card
+              entity: climate.kids_vt
+              name: Kids TRV
+              icon: mdi:radiator
+              show_state: false
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    title: Kids TRV Controls
+                    size: wide
+                    content:
+                      type: custom:versatile-thermostat-ui-card
+                      entity: climate.kids_vt
+              styles:
+                card:
+                  - border-radius: 999px
+                  - padding: 4px 12px
+                  - font-size: 11px
+                  - margin-top: "-30px"
+                  - margin-bottom: 18px
+                  - align-self: center
+                  - box-shadow: 0 0 25px rgba(236, 72, 153, 0.9)
+                  - background: rgba(24,16,32,0.95)
+                icon:
+                  - width: 16px
+                  - height: 16px
+
+        # ============================================================
+        # LANDING TRV
+        # ============================================================
+        - type: vertical-stack
+          cards:
+            - type: custom:custom-gauge-card
+              entity: sensor.vt_landing_temperature_slope
+              name: null
+              unit: °C/hr
+              min: -5
+              max: 5
+              decimals: 2
+              bidirectional: true
+              card_width: auto
+              card_height: 210px
+              card_padding: 6px
+              gauge_size: 170
+              center_size: 110
+              leds_count: 90
+              led_size: 3
+              smooth_transitions: true
+              animation_duration: 1000
+              theme: custom
+              custom_background: transparent
+              custom_gauge_background: "#000000"
+              custom_center_background: "#000000"
+              custom_text_color: "#e5e7eb"
+              custom_secondary_text_color: "#6b7280"
+              hide_inactive_leds: true
+              zones:
+                - from: -5
+                  to: 5
+                  color: "#020617"
+                  opacity: 0.8
+              severity:
+                - value: -5
+                  color: "#1d4ed8"
+                - value: -0.05
+                  color: "#38bdf8"
+                - value: 0
+                  color: "#4ade80"
+                - value: 0.1
+                  color: "#22c55e"
+                - value: 1
+                  color: "#fb923c"
+                - value: 5
+                  color: "#ef4444"
+              enable_shadow: true
+              center_shadow: true
+              center_shadow_blur: 30
+              center_shadow_spread: 2
+              center_shadow_pulse: true
+              center_shadow_pulse_duration: 2200
+              center_shadow_pulse_min: -0.05
+              center_shadow_pulse_max: 0.05
+              center_shadow_pulse_intensity: 0.3
+              show_trend: true
+              card_mod:
+                style: |
+                  ha-card {
+                    transition: box-shadow 0.5s ease;
+                    border-radius: 22px;
+                    box-shadow:
+                      {% set v = states('sensor.vt_landing_temperature_slope') | float(0) %}
+                      {% if v < -0.05 %}
+                        0 0 25px 8px rgba(56,189,248,0.55);
+                      {% elif v > 0.05 %}
+                        0 0 25px 8px rgba(236,72,153,0.65);
+                      {% else %}
+                        none;
+                      {% endif %}
+                  }
+            - type: custom:button-card
+              entity: climate.landing_vt
+              name: Landing TRV
+              icon: mdi:radiator
+              show_state: false
+              tap_action:
+                action: fire-dom-event
+                browser_mod:
+                  service: browser_mod.popup
+                  data:
+                    title: Landing TRV Controls
+                    size: wide
+                    content:
+                      type: custom:versatile-thermostat-ui-card
+                      entity: climate.landing_vt
+              styles:
+                card:
+                  - border-radius: 999px
+                  - padding: 4px 12px
+                  - font-size: 11px
+                  - margin-top: "-30px"
+                  - margin-bottom: 18px
+                  - align-self: center
+                  - box-shadow: 0 0 18px rgba(148, 163, 184, 0.7)
+                  - background: rgba(15,23,42,0.9)
+                icon:
+                  - width: 16px
+                  - height: 16px
+
+# Only show this whole stack on small/mobile screens
+visibility:
+  - condition: screen
+    media_query: "(min-width: 0px) and (max-width: 767px)"
