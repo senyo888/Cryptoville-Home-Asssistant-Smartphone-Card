@@ -1,6 +1,7 @@
 # Cryptoville-Home-Asssistant-Smartphone-Card
 A curated collection of mobile-friendly Home Assistant cards optimised for smartphones.
-Includes UI-ready YAML snippets for TRVs, climate views, gauges, sensors, and more.
+Includes UI-ready YAML snippets for TRVs, climate views, gauges, sensors,and more
+![IMG_5269](https://github.com/user-attachments/assets/b57fa4b0-9bc8-4c46-80e8-df9309a57f3d)
 
 📦 Included in this Repository
 1. Temperature Swing – Multi-TRV Gauge Set
